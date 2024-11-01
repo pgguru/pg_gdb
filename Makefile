@@ -6,3 +6,6 @@ PG_CONFIG ?= pg_config
 PG_CFLAGS := -Wno-missing-prototypes -Wno-deprecated-declarations -Wno-unused-result
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
+
+# PostgreSQL does not allow declaration after statement, but we do
+override CFLAGS := $(filter-out -Wdeclaration-after-statement,$(CFLAGS))

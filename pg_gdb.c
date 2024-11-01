@@ -1,6 +1,8 @@
 #include "postgres.h"
 #include "fmgr.h"
 #include "miscadmin.h"
+#include "utils/guc.h"
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,8 +60,8 @@ is_valid_debugger_command(char *command)
 			default:
 				return false;
 			}
-		command++;
 		}
+		command++;
 	}
 
 	/* only valid if we have a single %d */
@@ -73,7 +75,7 @@ attach_gdb(PG_FUNCTION_ARGS)
 	  ereport(ERROR, (errmsg("invalid debugger provided in pg_gdb.command"),
 					  errhint("command must have only a single %%d escape for process id")));
 
-  char *interpolated_command = psprintf(debugger_command, MyProcPid);
+  char *command = psprintf(debugger_command, MyProcPid);
 
   if (fork() == 0) {
 	  /* launch debugger using /bin/sh */
