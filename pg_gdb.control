@@ -1,0 +1,4 @@
+comment = 'Launch a debugger from the current process'
+default_version = '0.1'
+relocatable = true
+module_pathname = '$libdir/pg_gdb'
