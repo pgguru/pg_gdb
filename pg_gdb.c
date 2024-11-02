@@ -141,7 +141,7 @@ attach_gdb(PG_FUNCTION_ARGS)
 		_exit(1);  // If execl fails, exit the child process
 	}
 
-	PG_RETURN_VOID();
+	PG_RETURN_INT32(MyProcPid);
 }
 
 /* Helper to write a cstring to a unique temporary file, returning the filename */
