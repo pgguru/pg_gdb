@@ -1,6 +1,8 @@
 pg_gdb
 ======
 
+**NOTE: This is pre-release software; the SQL API will not be stable until version 1.0**
+
 This extension makes it easy to launch a debugger attached to the current backend process.
 
 ```
