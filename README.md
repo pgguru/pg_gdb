@@ -44,6 +44,43 @@ generated debugger commands file, so you can provide anything that `gdb` can
 recognize after a `break` statement.
 
 
+Symbols
+-------
+
+You can inspect the symbols in the current process using the `proc_sym()`
+function.  This takes a pid (defaulting to this process) and returns a list of
+symbols that it could read for this process image and its loaded shared
+libraries.  This can be used with the `gdb()` functions to load breakpoints
+based on a pattern, for instance:
+
+```
+postgres# select proc_sym from proc_sym() where proc_sym ~* 'tuple';
+             proc_sym
+-----------------------------------
+ BuildColumnDefListForTupleDesc
+ BuildTupleDescriptorForRelation
+ BuildTupleDescriptorForTargetList
+ CreatePositionDeleteTupleDesc
+ CreateRowIdTupleDesc
+ get_tupdesc_for_join_scan_tuples
+ IsFirstUpdateOfTuple
+ make_tuple_from_result_row
+ RemoveDroppedColumnsFromTupleDesc
+ TupleDescColumnNameList
+ TupleDescToAliasList
+ TupleDescToColumnMapForWrite
+ TupleDescToDuckDBColumnsArray
+ TupleDescToDuckDBColumnsMap
+ TupleDescToProjectionList
+ TupleDescToProjectionListForWrite
+(16 rows)
+postgres# select gdb(array_agg(proc_sym)) from proc_sym() where proc_sym ~* 'tuple';
+```
+
+This would launch `gdb` with all of the above breakpoints set.
+
+This functionality currently only exists on Linux.
+
 Signals
 -------
 

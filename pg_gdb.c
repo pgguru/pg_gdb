@@ -1,5 +1,6 @@
 #include "postgres.h"
 #include "fmgr.h"
+#include "funcapi.h"
 #include "miscadmin.h"
 #include "storage/fd.h"
 #include "utils/builtins.h"
@@ -14,6 +15,7 @@ PG_MODULE_MAGIC;
 static char *debugger_command;
 
 PG_FUNCTION_INFO_V1(attach_gdb);
+PG_FUNCTION_INFO_V1(process_symbols);
 
 static char *write_cstring_to_file(const char *content);
 
@@ -172,4 +174,75 @@ write_cstring_to_file(const char *content)
 
 	/* Return the filename */
 	return filename;
+}
+
+
+/*
+ * Function to return detected symbols from the given process id.  For now,
+ * this assumes basic linux tooling and /proc filesystem.
+ */
+Datum
+process_symbols(PG_FUNCTION_ARGS)
+{
+	/*
+	 * This command loads all the symbols in the process and its memory maps
+	 * that look like shared libraries (determined by an absolute path that
+	 * ends with o, basically .so files).
+	 */
+
+	/*
+	 * We want to one-shot this command and return a setof text, one per
+	 * returned line.
+	 */
+
+	FuncCallContext *funcctx;
+	FILE *fp;
+	char line[1024];
+
+	/* Initialize on the first call */
+	if (SRF_IS_FIRSTCALL())
+	{
+		funcctx = SRF_FIRSTCALL_INIT();
+		pid_t processPid;
+
+		if (PG_ARGISNULL(0))
+		{
+			processPid = MyProcPid;
+		}
+		else
+		{
+			processPid = PG_GETARG_INT32(0);
+		}
+
+		/* Allocate memory and store the command */
+		char *command = psprintf("nm -C /proc/%d/exec $(cat /proc/%d/maps | grep -vi '(deleted)' |"
+								 "awk '{ print $6 }'| grep ^'/.*o$' | sort | uniq) |"
+								 "grep -v :$ | grep -i ' T ' | awk '{ print $3 }' |"
+								 "sort | uniq", (int)processPid, (int)processPid);
+		fp = popen(command, "r");
+		if (!fp)
+			ereport(ERROR, (errmsg("could not execute command: %s", command)));
+
+		funcctx->user_fctx = fp;
+	}
+
+	/* Setup for each subsequent call */
+	funcctx = SRF_PERCALL_SETUP();
+	fp = (FILE *) funcctx->user_fctx;
+
+	/* Read and return each line */
+	if (fgets(line, sizeof(line), fp) != NULL)
+	{
+		int len = strlen(line);
+		if (len > 0 && line[len - 1] == '\n')
+			line[len - 1] = '\0';
+
+		SRF_RETURN_NEXT(funcctx, CStringGetTextDatum(line));
+	}
+	else
+	{
+		/* Close pipe and finish */
+		pclose(fp);
+		SRF_RETURN_DONE(funcctx);
+	}
 }
