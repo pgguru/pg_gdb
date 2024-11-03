@@ -13,6 +13,7 @@ postgres# SELECT gdb();
 When you run the `gdb()` function, it will run the command `pg_gdb.command` with
 the process id of the current backend.
 
+
 Configuration
 -------------
 
@@ -22,7 +23,19 @@ The default command run is:
 screen -X screen -t gdb_window gdb -p %d
 ```
 
-You can customize this using the `pg_gdb.command` GUC.
+You can customize this using the `pg_gdb.command` GUC.  The command is scanned
+to ensure that it has a single `%d` format specifier, which is replaced with the
+pid of the current backend and then executed in a forked process.
+
+The default command is appropriate if you are already running inside the
+`screen` multiplexer; it will launch a new `screen` window for running `gdb`.  A
+similar comamnd could be written if running inside `tmux` or another
+multiplexer.
+
+Why not just `gdb`?  While you could `SET pg_gdb.command = 'gdb -p %d';` and
+this would pass the check for a valid `pg_gdb.command`, doing so does not work
+since `psql` keeps control of the terminal meaning the gdb process immediately
+exits due to being run non-interactively.
 
 
 Breakpoints
@@ -69,6 +82,7 @@ This would launch `gdb` with all of the above breakpoints set.
 
 This functionality currently only exists on Linux.
 
+
 Signals
 -------
 
@@ -76,6 +90,7 @@ We will probably add support for a signals argument to allow you to generate
 `handle` statements in addition to the breakpoint argument.  (We may also end up
 doing something more generic, like allow you to provide additional contents in
 the template gdb file.)
+
 
 Notes
 -----
