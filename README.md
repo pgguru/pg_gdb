@@ -60,20 +60,8 @@ postgres# select proc_sym from proc_sym() where proc_sym ~* 'tuple';
  BuildColumnDefListForTupleDesc
  BuildTupleDescriptorForRelation
  BuildTupleDescriptorForTargetList
- CreatePositionDeleteTupleDesc
- CreateRowIdTupleDesc
- get_tupdesc_for_join_scan_tuples
- IsFirstUpdateOfTuple
- make_tuple_from_result_row
- RemoveDroppedColumnsFromTupleDesc
- TupleDescColumnNameList
- TupleDescToAliasList
- TupleDescToColumnMapForWrite
- TupleDescToDuckDBColumnsArray
- TupleDescToDuckDBColumnsMap
+ ...
  TupleDescToProjectionList
- TupleDescToProjectionListForWrite
-(16 rows)
 postgres# select gdb(array_agg(proc_sym)) from proc_sym() where proc_sym ~* 'tuple';
 ```
 
